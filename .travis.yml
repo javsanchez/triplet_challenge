@@ -3,23 +3,27 @@ mono: none
 dotnet: 2.1
 os: linux
 dist: xenial
+branches:
+  except:
+    - master # Skip building master since updating the README.md doesn't need to trigger a new build
+env:
+  # Change the definitions if your binary or source folder are different
+  - SRC_DIR=src TRIPLET_CHALLENGE="dotnet run -c Release --no-build --project ./src/ ./pg2009.txt"
 addons:
   apt:
+    sources:
+      # Include here any new source that you may need to install a package
     packages:
-      # Required packages to run the benchmark and collect results
-      - valgrind
-      - cloc
+      # Include the specific packages that you need
+        - valgrind
+        - cloc
 
-# Modify the script lines to compile and run your program. The output binary needs to be called `triplet_challenge`
+# Modify the script lines to compile and program
 script:
+  # Take a look at https://github.com/pamarcos/triplet_challenge/blob/cpp/.travis.yml to see a full example of a C++ build
   - dotnet build -c Release ./src/triplet_challenge.csproj
+  - wget https://raw.githubusercontent.com/pamarcos/triplet_challenge/master/check_result.sh && bash check_result.sh
 
-# Do not change the `after_script` lines since they are used to collect results to compare with other implementations
-after_script:
-  - wget https://github.com/sharkdp/hyperfine/releases/download/v1.3.0/hyperfine_1.3.0_amd64.deb && sudo dpkg -i hyperfine_1.3.0_amd64.deb
-  - lscpu
-  - cloc src
-  - dotnet run -c Release --no-build --project ./src/ ./pg2009.txt
-  - hyperfine -w 3 -m 10 "dotnet run -c Release --no-build --project ./src/ ./pg2009.txt"
-  - valgrind --tool=massif --time-unit=B --massif-out-file=valgrind.out dotnet run -c Release --no-build --project ./src/ ./pg2009.txt
-  - ms_print valgrind.out
+# Do not change the `after_success` lines since they are used to collect results to compare with other implementations
+after_success:
+  - wget https://raw.githubusercontent.com/pamarcos/triplet_challenge/master/after_success.sh && bash after_success.sh
